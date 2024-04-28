@@ -3,13 +3,16 @@ import numpy as np
 from sklearn.preprocessing import OneHotEncoder
 import seaborn as sns
 import matplotlib.pyplot as plt
+import warnings
+warnings.filterwarnings('ignore')
+
 
 # Load dataset
 df = pd.read_csv('exercice2/dataset.csv')
 
 # Define numerical and categorical features
-numerical_features = ['age', 'height']
-categorical_features = ['job', 'city', 'favorite music style']
+numerical_features = ['age']
+categorical_features = ['favorite music style']
 
 # One-hot encode categorical features
 encoder = OneHotEncoder(sparse=False, handle_unknown='ignore')
@@ -21,20 +24,17 @@ encoded_features_df = pd.DataFrame(encoded_features, columns=encoded_feature_nam
 df_encoded = pd.concat([df[numerical_features], encoded_features_df], axis=1)
 
 # Define weights for numerical features
-numerical_weights = {'age': 0.5, 'height': 0.5}
+numerical_weights = {'age': 0.5}
 
 # Define weights for categorical features and categories
 categorical_weights = {
-    'job': {'designer': 0.2, 'fireman': 0.3, 'teacher': 0.3, 'artist': 0.2, 'doctor': 0.2, 'painter': 0.2, 'developper': 0.2, 'engineer': 0.2},
-    'city': {'paris': 0.25, 'marseille': 0.25, 'madrid': 0.25, 'lille': 0.25},
     'favorite music style': {'trap': 0.3, 'hiphop': 0.3, 'metal': 0.2, 'rock': 0.2, 'classical': 0.2, 'rap': 0.2, 'jazz': 0.2, 'other': 0.2, 'technical death metal': 0.2}
 }
 
 # Define custom dissimilarity metric
 def custom_dissimilarity(sample1, sample2, numerical_weights, categorical_weights):
     # Euclidean distance for numerical features
-    numerical_distance = np.sqrt(np.sum((sample1['age'] - sample2['age']) ** 2)) * numerical_weights['age'] + \
-                          np.sqrt(np.sum((sample1['height'] - sample2['height']) ** 2)) * numerical_weights['height']
+    numerical_distance = np.sqrt(np.sum((sample1['age'] - sample2['age']) ** 2)) * numerical_weights['age']
     
     # Hamming distance for categorical features
     categorical_distance = 0
@@ -44,9 +44,7 @@ def custom_dissimilarity(sample1, sample2, numerical_weights, categorical_weight
                 categorical_distance += categorical_weights[feature]
     
     # Combine distances
-    dissimilarity = numerical_weights['age'] * numerical_distance + \
-                    numerical_weights['height'] * numerical_distance + \
-                    categorical_distance
+    dissimilarity = numerical_weights['age'] * numerical_distance + categorical_distance
     return dissimilarity
 
 # Calculate dissimilarity between each pair of samples
@@ -65,7 +63,16 @@ print("Standard Deviation of Dissimilarity:", std_dissimilarity)
 
 plt.figure(figsize=(10, 8))
 sns.heatmap(dissimilarities, cmap="YlGnBu", square=True)
-plt.title("Dissimilarity Heatmap")
+plt.title("Dissimilarity Heatmap (Age vs. Favorite Music Style)")
 plt.xlabel("Sample Index")
 plt.ylabel("Sample Index")
+plt.show()
+
+# Create scatter plot of dissimilarities vs. age
+plt.figure(figsize=(10, 6))
+plt.scatter(df_encoded['age'], dissimilarities.mean(axis=1), c='b', alpha=0.5)
+plt.title('Dissimilarities vs. Age')
+plt.xlabel('Age')
+plt.ylabel('Mean Dissimilarity')
+plt.grid(True)
 plt.show()
